@@ -10,41 +10,17 @@ class Client : public QObject
 {
     Q_OBJECT
 public:
-    explicit Client(QObject *parent = nullptr);
-    void Login(QString username,QString password);
-    // admins only requests:
-    void ViewBankDatabase();
-    void CreateNewUser(QString userdata);
-    void Deleteuser(QString accountnumber);
-    void UpdateUser(QString accountnumber,QString newdata);
-    //users only requests:
-    void TransferAccount();
-    void MakeTransaction();
-    //users and admins requests:
-    void GetAccNo();
-    void ViewAccount();
-    void ViewTransactionHistory();
-    // method to send the client request to the server
-    void sendrequesttoserver(QString request);
-    QString getRole() const;
-    void setRole(const QString &newRole);
+   explicit Client(QObject *parent = nullptr);
+   virtual void GetAccNo()=0;
+   virtual void ViewAccount()=0;
+   virtual void ViewTransactionHistory()=0;
+   virtual void sendrequesttoserver(QString request)=0;
+   virtual bool Login()=0;
 
-signals:
-public slots:
-    void connectToHost(QString host,quint16 port);
-    void disconnect();
-protected slots:
-    void connected();
-    void disconnected();
-    void error(QAbstractSocket::SocketError socketerror);
-    void stateChanged(QAbstractSocket::SocketState socketstate);
-    void readyRead();
- private:
-    QTcpSocket socket;
-    QString role;
-    QString userrequest;
-    QString adminrequest;
-    QVariant serverrespond;
+ protected:
+    QString m_role;
+    QString m_request;
+    QVariant m_serverrespond;
 
 };
 

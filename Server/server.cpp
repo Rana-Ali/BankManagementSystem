@@ -42,6 +42,7 @@ void Server::readyRead()
     QTcpSocket* socket=qobject_cast<QTcpSocket*>(sender());
     //create an in datasream to take the needed data from the client
     QDataStream inStream(socket);
+    inStream.setVersion(QDataStream::Qt_6_6);
     //take the request message and the role of our client to be able to handle the request
     QString request,role ;
     inStream>>request>>role;

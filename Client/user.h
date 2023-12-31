@@ -7,12 +7,26 @@ class User : public Client
 {
 public:
     explicit User();
-    QString GetAccNo(QString username);
-    void TransferAccount(QString fromaccountnumber,QString toaccountnumber,qint32 transferamount);
+    void TransferAccount();
+    void MakeTransaction();
+    void ViewAccount();
+    void GetAccNo();
+    void ViewTransactionHistory();
+    void sendrequesttoserver(QString request);
+    bool Login();
+    quint8 UserOptions();
+signals:
+public slots:
+    void connectToHost(QString host,quint16 port);
+    void disconnect();
+protected slots:
+    void connected();
+    void disconnected();
+    void error(QAbstractSocket::SocketError socketerror);
+    void stateChanged(QAbstractSocket::SocketState socketstate);
+    void readyRead();
 private:
-    QTcpSocket socket;
-    QString userrequest;
-    QVariant serverrespond;
+        QTcpSocket socket;
 
 };
 

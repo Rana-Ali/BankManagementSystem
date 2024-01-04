@@ -5,6 +5,7 @@
 #include <QTcpSocket>
 #include <QAbstractSocket>
 #include <QMetaEnum>
+#include <windows.h>
 
 class Client : public QObject
 {
@@ -14,8 +15,9 @@ public:
    virtual void GetAccNo()=0;
    virtual void ViewAccount()=0;
    virtual void ViewTransactionHistory()=0;
-   virtual void sendrequesttoserver(QString request)=0;
+   virtual void sendrequesttoserver()=0;
    virtual bool Login()=0;
+   void clearScreen();
 
  protected:
     QString m_role;

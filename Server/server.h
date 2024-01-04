@@ -6,12 +6,13 @@
 #include <QAbstractSocket>
 #include <QTcpSocket>
 #include <QTcpServer>
+#include "database.h"
 
-class Server : public QObject
+class Server : public DataBase
 {
     Q_OBJECT
 public:
-    explicit Server(QObject *parent = nullptr);
+    explicit Server(DataBase *parent = nullptr);
     void Handlerequest(QString,QString);
 
 signals:

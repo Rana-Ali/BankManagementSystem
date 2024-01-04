@@ -9,6 +9,11 @@ Client::Client(QObject *parent)
 
 }
 
+void Client::clearScreen()
+{
+    system("cls");
+}
+
 
 
 // void Client::Login(QString username,QString password)

@@ -14,8 +14,9 @@ public:
     void Deleteuser();
     void UpdateUser();
     void ViewTransactionHistory();
-    void sendrequesttoserver(QString request);
+    void sendrequesttoserver();
     bool Login();
+    void Start(bool&);
 
 signals:
 public slots:
@@ -29,6 +30,9 @@ protected slots:
     void readyRead();
 private:
         QTcpSocket socket;
+        QDataStream outStream;
+        QDataStream inStream;
+        QString m_adminname;
 
 };
 

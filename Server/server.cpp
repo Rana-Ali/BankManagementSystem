@@ -1,7 +1,7 @@
 #include "server.h"
 
-Server::Server(QObject *parent)
-    : QObject{parent}
+Server::Server(DataBase *parent)
+    : DataBase{parent}
 {
     connect(&server,&QTcpServer::newConnection,this,&Server::newConnection);
 }
@@ -48,6 +48,7 @@ void Server::readyRead()
     inStream>>request>>role;
     qDebug()<<request<<role;
     //call this method to handle the request according to client role
+    setRole(role);
     Handlerequest(request,role);
 }
 
@@ -67,31 +68,99 @@ void Server::Handlerequest(QString request,QString role)
     if(request=="Transfer Account")
     {
         bool ok = true;
-        QString fromtransferaccount,totransferaccount;
+        QString totransferaccount;
         quint32 transferamount;
-        inStream >> fromtransferaccount >> totransferaccount >> transferamount;
-        qDebug() << "Received from client:" << fromtransferaccount<<" "<<totransferaccount<<" "<<transferamount ;
+        inStream >> totransferaccount >> transferamount;
+        qDebug() << "Received from client:"<<totransferaccount<<" "<<transferamount ;
+        ok=TransferAmount(totransferaccount,transferamount);
         //sending respond to the server using the socket
         outStream<<ok;
 
     }
     else if(request=="View Account")
     {
-        // create a map container to test the code
-        QMap<QString,qint32>data;
-        data["4545"]=12500;
-        QString accountnumber;
-        inStream >> accountnumber;
+        QString m_accountnumber=accountnumber();
+        qint32 Balance =ViewAccountBalance(m_accountnumber);
          //sending respond to the server using the socket
-        outStream<<data[accountnumber];
+        outStream<<Balance;
     }
     else if(request=="Make Transaction")
     {
-        QMap<QString,qint32>data;
-        data["4545"]=12500;
-        QString accountnumber;
-        qint32 TransactionAmount;
-        inStream >> accountnumber>>TransactionAmount;
+         bool ok = true;
+        //quint16 TransactionNumber=0;
+        qint32 TransactionAmount=0;
+        inStream >> TransactionAmount;
+        ok=MakeTransaction(TransactionAmount);
+        outStream<<ok;
     }
+    else if(request=="Login")
+    {
+        QString username , password;
+        bool ok;
+        inStream>>username>>password;
+        qDebug() << "Received from client:" << username<<" "<<password ;
+        ok=checkLogin(username,password);
+         //sending respond to the server using the socket
+         outStream<<ok;
+
+    }
+    else if(request=="GetAccNo")
+    {
+        QString username,accountnumber;
+        inStream>>username;
+        accountnumber = GetAccNo(username);
+        outStream<<accountnumber;
+
+    }
+    else if(request =="View Transaction History")
+    {
+        quint16 count;
+        QString m_accountnumber=accountnumber();
+        inStream>>count;
+        QString data=ViewTransactionHistory(m_accountnumber,count);
+        outStream<<data;
+    }
+    }
+    else if (role.toUpper()=="ADMIN")
+    {
+        if(request=="Login")
+        {
+            QString username , password;
+            bool ok;
+            inStream>>username>>password;
+            qDebug() << "Received from client:" << username<<" "<<password ;
+            ok=checkLogin(username,password);
+            //sending respond to the server using the socket
+            outStream<<ok;
+
+        }
+        else if(request=="View Account")
+        {
+            QString accountnumber;
+            inStream >>accountnumber;
+            qint32 Balance =ViewAccountBalance(accountnumber);
+             //sending respond to the server using the socket
+            outStream<<Balance;
+        }
+        else if(request=="GetAccNo")
+        {
+            QString username,accountnumber;
+            inStream>>username;
+            accountnumber = GetAccNo(username);
+            outStream<<accountnumber;
+
+        }
+        else if(request=="Update User")
+        {
+            QString flag;
+            inStream>>flag;
+            if(flag=="check")
+            {
+                QString accountnumber;
+                inStream>>accountnumber;
+
+            }
+
+        }
     }
 }

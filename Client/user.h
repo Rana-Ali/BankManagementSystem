@@ -12,9 +12,10 @@ public:
     void ViewAccount();
     void GetAccNo();
     void ViewTransactionHistory();
-    void sendrequesttoserver(QString request);
+    void sendrequesttoserver();
     bool Login();
     quint8 UserOptions();
+    void Start(bool&);
 signals:
 public slots:
     void connectToHost(QString host,quint16 port);
@@ -26,7 +27,11 @@ protected slots:
     void stateChanged(QAbstractSocket::SocketState socketstate);
     void readyRead();
 private:
-        QTcpSocket socket;
+    QTcpSocket socket;
+    QDataStream outStream;
+    QDataStream inStream;
+    QString m_userName;
+    QString m_accountNumber;
 
 };
 

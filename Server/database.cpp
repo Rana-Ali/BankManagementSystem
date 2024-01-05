@@ -207,6 +207,8 @@ bool DataBase::GetField(QString accountnumber, QString field, QString& fieldValu
 
 bool DataBase::UpdateField(QString accountnumber, QString field, QString fieldValue)
 {
+
+    //update fields  username or account number
     // Load JSON file
     if (!Users_DB.open(QIODevice::ReadWrite | QIODevice::Text )) {
         qDebug() << "Error: Can't open the DataBase file";
@@ -219,27 +221,85 @@ bool DataBase::UpdateField(QString accountnumber, QString field, QString fieldVa
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
     if (jsonDoc.isNull()) {
         qDebug() << "Error: Failed to parse JSON data from update";
+        Users_DB.close();
         return false;
     }
     // Check if the root element is an object
     if (!jsonDoc.isObject()) {
         qDebug() << "Error: JSON data is not an object";
+        Users_DB.close();
         return false;
     }
     QJsonObject m_Users = jsonDoc.object();
-
-    if(m_Users.contains(accountnumber)&&m_Users[accountnumber].isObject())
+    if(field=="password")
     {
-        QJsonObject userObject = m_Users[accountnumber].toObject();
-        userObject[field]=fieldValue;
-        m_Users[accountnumber] = userObject;
-        Users_DB.seek(0);
-        Users_DB.write(QJsonDocument(m_Users).toJson());
-        Users_DB.close();
-        return true;
+        QString username;
+        if(m_Users.contains(accountnumber)&&m_Users[accountnumber].isObject())
+        {
+             QJsonObject userObject = m_Users[accountnumber].toObject();
+             username=userObject["Username"].toString();
+        }
+        if (!Login_DB.open(QIODevice::ReadWrite| QIODevice::Text)) {
+            qDebug() << "Error: Can't open the Login_DB file";
+            Users_DB.close();
+            return false;
+        }
+        QByteArray loginData = Login_DB.readAll();
+        QJsonDocument loginDoc = QJsonDocument::fromJson(loginData);
+
+        // Check if the document is an object
+        if (loginDoc.isObject()) {
+            // Get the existing users array
+            QJsonObject m_login = loginDoc.object();
+            QJsonArray usersArray = m_login["users"].toArray();
+            for(int i=0;i<usersArray.size();++i)
+            {
+                if (!usersArray[i].isObject()) {
+                    qDebug() << "Error: User entry is not an object";
+                    Users_DB.close();
+                    Login_DB.close();
+                    return false;
+                }
+
+                QJsonObject userObject = usersArray[i].toObject();
+                if(userObject.contains(username))
+                {
+                    QJsonObject user=userObject[username].toObject();
+                    user["password"]=fieldValue;
+                    userObject[username]=user;
+                    usersArray.replace(i,userObject);
+                   // Update the JSON document with the modified users array
+                   m_login["users"]=usersArray;
+                   // Write the updated m_login to Login_DB
+                   Login_DB.seek(0);
+                   Login_DB.write(QJsonDocument(m_login).toJson(QJsonDocument::Indented));
+                   Login_DB.close();
+                   Users_DB.close();
+                   return true;
+
+            }
+
+
+        }
     }
-    Users_DB.close();
-    return false;
+}
+
+    else
+    {
+
+        if(m_Users.contains(accountnumber)&&m_Users[accountnumber].isObject())
+        {
+            QJsonObject userObject = m_Users[accountnumber].toObject();
+            userObject[field]=fieldValue;
+            m_Users[accountnumber] = userObject;
+            Users_DB.seek(0);
+            Users_DB.write(QJsonDocument(m_Users).toJson());
+            Users_DB.close();
+            return true;
+        }
+    }
+       Users_DB.close();
+        return false;
 }
 
 bool DataBase::MakeTransaction( qint32 TransactionAmount)
@@ -369,37 +429,230 @@ QString DataBase::ViewTransactionHistory(QString accountnumber,quint16 count)
     return error;
 }
 
-bool DataBase::checkField(QFile &, QString)
+bool DataBase::checkAccNo(QString accountnumber)
 {
+    // Load JSON file
+    if (!Users_DB.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Error: Can't open the DataBase file";
+        return false;
+    }
+
+    // Read JSON data
+    QByteArray jsonData1 = Users_DB.readAll();
+    Users_DB.close();
+
+    // Parse JSON
+    QJsonDocument jsonDoc1 = QJsonDocument::fromJson(jsonData1);
+    if (jsonDoc1.isNull()) {
+        qDebug() << "Error: Failed to parse JSON data from check";
+        return false;
+    }
+
+    // Check if the root element is an object
+    if (!jsonDoc1.isObject()) {
+        qDebug() << "Error: JSON data is not an object";
+        return false;
+    }
+    QJsonObject usersObject = jsonDoc1.object();
+
+    if(usersObject.contains(accountnumber)&&usersObject[accountnumber].isObject())
+    {
+        return true;
+    }
+
+    return false;
+}
+
+bool DataBase::checkField(QString accountnumber, QString field)
+{
+    if (!Users_DB.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Error: Can't open the DataBase file";
+    }
+    // Read JSON data
+    QByteArray jsonData = Users_DB.readAll();
+    Users_DB.close();
+    // Parse JSON
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
+    QJsonObject usersObject = jsonDoc.object();
+    QJsonObject  userObject = usersObject[accountnumber].toObject();
+    if(userObject.contains(field))
+        return true;
+    return false;
 
 }
 
-// void DataBase::checkDataBase()
-// {
-//     if (!Users_DB.open(QIODevice::ReadOnly | QIODevice::Text)) {
-//         qDebug() << "Error: Can't open the DataBase file";
-//     }
+bool DataBase::UpdateUser(QString accountnumber, QVariantMap map)
+{
+    // bool ok=checkAccNo(accountnumber);
+    // if(!ok)
+    // {
+    //     return false;
+    // }
+    bool ok=false;
+    if (!Users_DB.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Error: Can't open the DataBase file";
+    }
+    // Read JSON data
+    QByteArray jsonData = Users_DB.readAll();
+    Users_DB.close();
+    // Parse JSON
+    qInfo()<<"okkkk";
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
+    QJsonObject usersObject = jsonDoc.object();
+    QJsonObject  userObject = usersObject[accountnumber].toObject();
+    foreach (QString key, map.keys()) {
+        if(key != "password")
+        {
+            qInfo()<<"not pass";
+            ok =checkField(accountnumber,key);
 
-//     // Read JSON data
-//     QByteArray jsonData = Users_DB.readAll();
-//     Users_DB.close();
+        }
+        else
+        {
+            ok=true;
+        }
 
-//     // Parse JSON
-//     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
-//     if (jsonDoc.isNull()) {
-//         qDebug() << "Error: Failed to parse JSON data";
-//     }
+        if(ok)
+        {
+            QString val=map[key].toString();
+            qInfo()<<val;
+            ok=UpdateField(accountnumber,key,val);
+        }
+    }
+    return ok;
+}
 
-//     // Check if the root element is an object
-//     if (!jsonDoc.isObject()) {
-//         qDebug() << "Error: JSON data is not an object";
-//     }
-//   QJsonObject usersObject = jsonDoc.object();
-//     if(usersObject.contains(m_accountnumber)&&usersObject[m_accountnumber].isObject())
-//     {
-//         userObject = usersObject[m_accountnumber].toObject();
-//     }
-// }
+bool DataBase::CreateUser(QString username,QString password,QVariantMap map)
+{
+    // bool ok=checkUsername(username);
+    // if(!ok)
+    // {
+    //     return false;
+    // }
+
+    //create user object in Users_DB file
+    /***************************************************************************/
+    if (!Users_DB.open(QIODevice::ReadWrite| QIODevice::Text)) {
+        qDebug() << "Error: Can't open the DataBase file";
+        return false;
+    }
+    QByteArray jsonData2 =Users_DB.readAll();
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData2);
+    if (jsonDoc.isNull()) {
+        qDebug()<<"hello";
+        qDebug() << "Error: Failed to parse JSON data from update";
+        Users_DB.close();
+        return false;
+    }
+    // Check if the root element is an object
+    if (!jsonDoc.isObject()) {
+        qDebug() << "Error: JSON data is not an object";
+        Users_DB.close();
+        return false;
+    }
+    QJsonObject usersObject  = jsonDoc.object();
+
+    QString accountnumber ="9998";
+    QJsonObject userObject;
+    userObject["Accountnumber"]=accountnumber;
+    foreach (QString key, map.keys()) {
+        userObject[key]=map[key].toString();
+    }
+    usersObject[accountnumber]=userObject;
+    jsonDoc.setObject(usersObject);
+    Users_DB.seek(0);
+    Users_DB.write(jsonDoc.toJson(QJsonDocument::Indented));
+    Users_DB.close();
+    /*****************************************************************************************/
+    //create user object in Login_DB file
+    // Open the Login_DB file for writing
+    if (!Login_DB.open(QIODevice::ReadWrite| QIODevice::Text)) {
+        qDebug() << "Error: Can't open the Login_DB file";
+        return false;
+    }
+    QByteArray loginData = Login_DB.readAll();
+    QJsonDocument loginDoc = QJsonDocument::fromJson(loginData);
+
+    // Check if the document is an object
+    if (loginDoc.isObject()) {
+        // Get the existing users array
+        QJsonObject m_login = loginDoc.object();
+        QJsonArray usersArray = m_login["users"].toArray();
+
+        // Create a new user object for Login_DB
+        QJsonObject newUser;
+        newUser["accountnumber"] = accountnumber;
+        newUser["password"] = password;
+
+        // Wrap the new user object in an array element
+        QJsonObject newUserArrayElement;
+        newUserArrayElement[username] = newUser;
+
+        // Add the new user object to the users array
+        usersArray.append(newUserArrayElement);
+
+        // Update the JSON document with the modified users array
+        m_login["users"]=usersArray;
+
+
+        // Write the updated m_login to Login_DB
+        Login_DB.seek(0);
+        Login_DB.write(QJsonDocument(m_login).toJson(QJsonDocument::Indented));
+    }
+    else {
+        qDebug() << "Error: Invalid JSON data in Login_DB";
+        Login_DB.close();
+        return false;
+    }
+
+    Login_DB.close();
+
+    return true;
+
+}
+
+bool DataBase::checkUsername(QString username)
+{
+    if (!Login_DB.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Error: Can't open the Login_DB file";
+        return false;
+    }
+
+    QByteArray jsonData = Login_DB.readAll();
+    Login_DB.close();
+    qInfo() << "Checking username";
+
+    // Parse JSON
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
+    if (jsonDoc.isNull() || !jsonDoc.isObject()) {
+        qDebug() << "Error: Failed to parse JSON data in Login_DB";
+        return false;
+    }
+
+    QJsonObject m_login = jsonDoc.object();
+    if (m_login.contains("users") && m_login["users"].isArray()) {
+        QJsonArray usersArray = m_login["users"].toArray();
+
+        for (const QJsonValue &userVal : usersArray) {
+            if (!userVal.isObject()) {
+                qDebug() << "Error: User entry is not an object";
+                return false;
+            }
+
+            QJsonObject userObject = userVal.toObject();
+            if (userObject.contains(username)) {
+                qInfo() << "Username already exists";
+                return false;  // Username found in the database
+            }
+        }
+    } else {
+        qDebug() << "Error: 'users' key not found or not an array in Login_DB";
+        return false;
+    }
+
+    qInfo() << "Username is available";
+    return true;  // Username is not found in the database
+}
 
 QString DataBase::role() const
 {

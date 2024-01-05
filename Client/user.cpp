@@ -11,6 +11,7 @@ User::User()
     inStream.setVersion(QDataStream::Qt_6_6);
     m_role="user";
     m_request="Login";
+    m_requestflag="General";
     connect(&socket,&QTcpSocket::connected,this,&User::connected);
     connect(&socket,&QTcpSocket::disconnected,this,&User::disconnected);
     connect(&socket,&QTcpSocket::stateChanged,this,&User::stateChanged);
@@ -96,35 +97,8 @@ void User::ViewTransactionHistory()
 
 void User::sendrequesttoserver()
 {
+    outStream<<m_requestflag;
     outStream<<m_request<<m_role;
-
-    if(m_request=="Transfer Account")
-    {
-        //call the method Transfer Account to handle this request
-        TransferAccount();
-    }
-    else if(m_request=="View Account")
-    {
-        //call the method view Account to handle this request
-        ViewAccount();
-    }
-    else if(m_request=="Make Transaction")
-    {
-        MakeTransaction();
-    }
-    else if(m_request=="GetAccNo")
-    {
-        GetAccNo();
-    }
-    else if(m_request=="View Transaction History")
-    {
-        ViewTransactionHistory();
-    }
-    else
-    {
-        qFatal("The request message is not defined");
-    }
-
 }
 
 bool User::Login()
@@ -132,6 +106,7 @@ bool User::Login()
     qInfo()<<"WELCOME!!";
     qInfo()<<"Username: ";
     m_request="Login";
+    outStream<<m_requestflag;
     outStream<<m_request<<m_role;
     QString password;
     std::string name;
@@ -172,18 +147,28 @@ void User::Start(bool& islogged)
     {
     case 1:
         m_request="View Account";
+        sendrequesttoserver();
+        ViewAccount();
         break;
     case 2:
         m_request="View Transaction History";
+        sendrequesttoserver();
+        ViewTransactionHistory();
         break;
     case 3:
         m_request="GetAccNo";
+        sendrequesttoserver();
+        GetAccNo();
         break;
     case 4:
         m_request="Transfer Account";
+        sendrequesttoserver();
+        TransferAccount();
         break;
     case 5:
         m_request="Make Transaction";
+        sendrequesttoserver();
+        MakeTransaction();
         break;
     case 6:
         islogged = false;
@@ -198,7 +183,6 @@ void User::Start(bool& islogged)
         input.toUInt() == 4||
         input.toUInt() == 5)
     {
-    sendrequesttoserver();
     qInfo()<<"if you have another request press 'y' if you want to exit press 'N':";
     std::cin>>in;
     if(in=='n'||in=='N')

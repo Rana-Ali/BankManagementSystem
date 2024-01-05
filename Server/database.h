@@ -21,8 +21,12 @@ public:
     bool MakeTransaction(qint32);
     void SaveTransaction(QString,QString&);
     QString ViewTransactionHistory(QString,quint16);
-    void checkDataBase();
-    bool checkField(QString);
+    bool checkAccNo(QString);
+    bool checkField(QString ,QString);
+    bool UpdateUser(QString ,QVariantMap);
+    bool CreateUser(QString,QString,QVariantMap);
+    bool checkUsername(QString);
+
 
     QString role() const;
     void setRole(const QString &newRole);

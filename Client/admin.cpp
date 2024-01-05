@@ -60,47 +60,68 @@ void Admin::ViewBankDatabase()
 void Admin::CreateNewUser()
 {
     QVariantMap map;
-    std::string username,fullname;
-    quint8 age=0;
-    quint8 counter=0;
+    std::string username,password;
+    QString Username,Fullname,flag="check";
+    quint32 age=0;
+    quint16 counter=0;
     qint32 balance=0;
     bool ok =false;
+    QTextStream Cin(stdin);
+    m_requestflag="CreateUser";
 
-   do
+
+    do
     {
         if(counter>0)
-       {
-           qInfo()<<"User name is already existed!!\nPlease Enter a different one:";
-           std::cin>>username;
-           QString Username =QString::fromStdString(username);
-           outStream<<Username;
-       }
+        {
+            qInfo()<<"User name is already existed!!\nPlease Enter a different one:";
+            std::cin>>username;
+            Username =QString::fromStdString(username);
+            outStream<<m_requestflag;
+            outStream<<flag;
+            outStream<<Username;
+        }
         else
         {
             qInfo()<<"Username:";
             std::cin>>username;
-            QString Username =QString::fromStdString(username);
+            Username =QString::fromStdString(username);
+            outStream<<flag;
             outStream<<Username;
         }
 
-    counter++;
-    socket.waitForReadyRead();
-    ok =m_serverrespond.toBool();
+        counter++;
+        socket.waitForReadyRead();
+        ok =m_serverrespond.toBool();
     }while(!ok);
 
-        qInfo()<<"Full Name:";
-        std::cin>>fullname;
-        qInfo()<<"Age:";
-        std::cin>>age;
-        qInfo()<<"Balance:";
-        std::cin>>balance;
+    flag="update";
 
-    map["Full Name"]=QString::fromStdString(fullname);
+
+    qInfo()<<"Full Name:";
+    Fullname=Cin.readLine();
+
+    qInfo()<<"Age:";
+    std::cin>>age;
+
+    qInfo()<<"Balance:";
+    std::cin>>balance;
+
+    qInfo()<<"Password:";
+    std::cin>>password;
+
+    map["Fullname"]=Fullname;
     map["Age"]=age;
     map["Balance"]=balance;
-    outStream<<map;
+    map["Username"]=Username;
+
+    QString Password=QString::fromStdString(password);
+    outStream<<m_requestflag;
+    outStream<<flag;
+    outStream<<Username<<Password<<map;
     socket.waitForBytesWritten();
     socket.waitForReadyRead();
+    m_requestflag="General";
     if(m_serverrespond.toBool()==true)
     {
         qInfo()<<"User is created Successfully";
@@ -135,24 +156,28 @@ void Admin::Deleteuser()
 
 void Admin::UpdateUser()
 {
-    QVariantMap map;
+    QTextStream Cin(stdin);
     QString flag="check";
-    std::string accountNumber,fullname,password;
-    quint8 age=0;
-    quint8 in=0;
-    char key='y';
-    quint8 counter=0;
+    QString Fullname;
+    QVariantMap map;
+    QString AccountNumber;
+    std::string accountNumber,password;
+    quint16 age=0;
+    quint16 in=0;
+    std::string key;
+    bool Chosenflag=true;
     qint32 balance=0;
+    quint16 counter=0;
     bool ok =false;
-
-
+    m_requestflag="UpdateUser";
     do
     {
         if(counter>0)
         {
             qInfo()<<"Account Number is not existed!!\nplease Enter a valid one:";
             std::cin>>accountNumber;
-            QString AccountNumber=QString::fromStdString(accountNumber);
+            AccountNumber=QString::fromStdString(accountNumber);
+            outStream<<m_requestflag;
             outStream<<flag;
             outStream<<AccountNumber;
         }
@@ -160,7 +185,7 @@ void Admin::UpdateUser()
         {
             qInfo()<<"Account Number:";
             std::cin>>accountNumber;
-            QString AccountNumber=QString::fromStdString(accountNumber);
+            AccountNumber=QString::fromStdString(accountNumber);
             outStream<<flag;
             outStream<<AccountNumber;
         }
@@ -168,7 +193,9 @@ void Admin::UpdateUser()
         socket.waitForReadyRead();
         ok =m_serverrespond.toBool();
     }while(!ok);
+
     flag="update";
+
     do
     {
         qInfo()<<"Choose the field you want to update:";
@@ -177,8 +204,9 @@ void Admin::UpdateUser()
         switch (in) {
         case 1:
             qInfo()<<"New Full Name:";
-            std::cin>>fullname;
-            map["Full Name"]=QString::fromStdString(fullname);
+            Fullname=Cin.readLine();
+            map["Fullname"]=Fullname;
+            qInfo()<<Fullname;
             break;
         case 2:
             qInfo()<<"New Age:";
@@ -193,7 +221,7 @@ void Admin::UpdateUser()
         case 4:
             qInfo()<<"New Password:";
             std::cin>>password;
-            map["Password"]=QString::fromStdString(password);
+            map["password"]=QString::fromStdString(password);
             break;
         default:
             qInfo()<<"Please enter a valid choice";
@@ -202,12 +230,18 @@ void Admin::UpdateUser()
         qInfo()<<"----------------------------------------------------------";
         qInfo()<<"If you want to update another field press 'y'\nIf you want to save and exit press'n'";
         std::cin>>key;
+        if(key != "y")
+        {
+            Chosenflag =false;
+        }
     }
-    while((key != 'n')||(key != 'N'));
+    while(Chosenflag);
+    outStream<<m_requestflag;
     outStream<<flag;
-    outStream<<map;
+    outStream<<AccountNumber<<map;
     socket.waitForBytesWritten();
     socket.waitForReadyRead();
+    m_requestflag="General";
     if(m_serverrespond.toBool()==true)
     {
         qInfo()<<"User Data is updated Successfully";
@@ -226,57 +260,18 @@ void Admin::ViewTransactionHistory()
     std::cin>>accountNumber;
     QString AccountNumber=QString::fromStdString(accountNumber);
     qInfo()<<"Please send the number of transactions:";
-    quint32 count;
+    quint16 count;
     std::cin>>count;
     outStream<<AccountNumber<<count;
     socket.waitForBytesWritten();
     socket.waitForReadyRead();
-    qInfo()<<m_serverrespond.toString();
+    qInfo().noquote()<<m_serverrespond.toString();
 }
 
 void Admin::sendrequesttoserver()
 {
+    outStream<<m_requestflag;
     outStream<<m_request<<m_role;
-
-    if(m_request=="View Bank DataBase")
-    {
-        //call the method View Bank DataBase to handle this request
-        ViewBankDatabase();
-    }
-    else if(m_request=="View Account")
-    {
-        //call the method view Account to handle this request
-        ViewAccount();
-    }
-    else if(m_request=="Create New User")
-    {
-        CreateNewUser();
-    }
-    else if(m_request=="Get Acc No")
-    {
-        GetAccNo();
-    }
-    else if(m_request=="View Transaction History")
-    {
-        ViewTransactionHistory();
-    }
-    else if(m_request=="Update User")
-    {
-        UpdateUser();
-    }
-    else if(m_request=="Delete User")
-    {
-        Deleteuser();
-    }
-    else if(m_request=="Login")
-    {
-        Login();
-
-    }
-    else
-    {
-        qFatal("The request message is not defined");
-    }
 }
 
 bool Admin::Login()
@@ -284,6 +279,7 @@ bool Admin::Login()
     qInfo()<<"WELCOME!!";
     qInfo()<<"Username: ";
     m_request="Login";
+    outStream<<m_requestflag;
     outStream<<m_request<<m_role;
     QString adminname,password;
     std::string name;
@@ -319,30 +315,44 @@ void Admin::Start(bool &islogged)
     qInfo()<<"Choose from the list:\n1-View Account\n2-View Transaction History\n3-Get Account Number\n4-Create New User"
                "\n5-Update User Data\n6-Delete User\n7-View Bank DataBase\n8-exit";
     std::cin>>input;
+
     std::cin.ignore();
     clearScreen();
     switch(input)
     {
     case 1:
         m_request="View Account";
+        sendrequesttoserver();
+        ViewAccount();
         break;
     case 2:
         m_request="View Transaction History";
+        sendrequesttoserver();
+        ViewTransactionHistory();
         break;
     case 3:
-        m_request="Get Account Number";
+        m_request="GetAccNo";
+        sendrequesttoserver();
+        GetAccNo();
         break;
     case 4:
-        m_request="Create New User";
+        m_request="Create User";
+        sendrequesttoserver();
+        CreateNewUser();
         break;
     case 5:
-        m_request="Update User Data";
+        m_request="Update User";
+        sendrequesttoserver();
+        UpdateUser();
         break;
     case 6:
         m_request="Delete User";
+        sendrequesttoserver();
         break;
     case 7:
         m_request="View Bank DataBase";
+        sendrequesttoserver();
+        ViewBankDatabase();
         break;
     case 8:
         islogged=false;
@@ -353,7 +363,6 @@ void Admin::Start(bool &islogged)
     }
     if (input != 8)
     {
-        sendrequesttoserver();
         qInfo()<<"if you have another request press 'y' if you want to exit press 'N':";
         std::cin>>in;
         if(in=='n'||in=='N')
@@ -418,14 +427,14 @@ void Admin::readyRead()
         inStream>>AccountMoney;
         m_serverrespond.setValue(AccountMoney);
     }
-    else if(m_request=="Create New User"||(m_request=="Delete User")||(m_request=="Update User Data")||(m_request=="Login"))
+    else if(m_request=="Create User"||(m_request=="Delete User")||(m_request=="Update User")||(m_request=="Login"))
     {
         bool respond;
         inStream>>respond;
         m_serverrespond.setValue(respond);
 
     }
-    else if(m_request=="Get Account Number")
+    else if(m_request=="GetAccNo")
     {
         QString AccNo;
         inStream>>AccNo;

@@ -6,7 +6,7 @@
 Client::Client(QObject *parent)
     : QObject{parent}
 {
-
+    m_requestflag="General";
 }
 
 void Client::clearScreen()

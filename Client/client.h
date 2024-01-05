@@ -23,6 +23,7 @@ public:
     QString m_role;
     QString m_request;
     QVariant m_serverrespond;
+    QString m_requestflag;
 
 };
 

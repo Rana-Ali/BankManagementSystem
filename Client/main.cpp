@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     QString role;
+    bool islogged=false;
 
     qInfo()<<"Welcome to the bank system \nPlease choose \"user\"or\"admin\"or\"exit\"";
     std::string clientrole;
@@ -22,22 +23,31 @@ int main(int argc, char *argv[])
      {
         User user;
         user.connectToHost("127.0.0.1", 1234);
+        while(!islogged)
+        {
+        islogged =user.Login();
         user.clearScreen();
-        bool islogged =user.Login();
-        user.clearScreen();
-        qInfo()<<"welcome ";
-            while(islogged)
-            {
+        if(!islogged)
+        qInfo("Username or Password is wrong!!\nPlease Try Again");
+        }
+
+        while(islogged)
+        {
             user.Start(islogged);
-            }
+        }
      }
      else if(role.toUpper()=="ADMIN")
      {
          Admin admin;
          admin.connectToHost("127.0.0.1", 1234);
-         bool islogged= admin.Login();
-         admin.clearScreen();
-         qInfo()<<"welcome ";
+         while(!islogged)
+         {
+             islogged =admin.Login();
+             admin.clearScreen();
+             if(!islogged)
+             qInfo("Username or Password is wrong!!\nPlease Try Again");
+         }
+
          while(islogged)
          {
              admin.Start(islogged);

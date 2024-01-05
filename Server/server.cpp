@@ -44,9 +44,23 @@ void Server::readyRead()
     QDataStream inStream(socket);
     inStream.setVersion(QDataStream::Qt_6_6);
     //take the request message and the role of our client to be able to handle the request
-    QString request,role ;
+    QString request,role,requestflag;
+    inStream>>requestflag;
+    if(requestflag=="CreateUser")
+    {
+        role="admin";
+        request="Create User";
+    }
+    else if(requestflag=="UpdateUser")
+    {
+        role="admin";
+        request="Update User";
+    }
+    else if(requestflag=="General")
+    {
     inStream>>request>>role;
     qDebug()<<request<<role;
+    }
     //call this method to handle the request according to client role
     setRole(role);
     Handlerequest(request,role);
@@ -156,10 +170,56 @@ void Server::Handlerequest(QString request,QString role)
             inStream>>flag;
             if(flag=="check")
             {
-                QString accountnumber;
-                inStream>>accountnumber;
+             QString accountnumber;
+             inStream>>accountnumber;
+             qInfo()<<accountnumber;
+             bool ok=checkAccNo(accountnumber);
+             outStream<<ok;
 
             }
+            else if(flag=="update")
+            {
+                QString accountnumber;
+                QVariantMap map;
+                inStream>>accountnumber>>map;
+                qInfo()<<accountnumber;
+                bool ok=UpdateUser(accountnumber,map);
+                outStream<<ok;
+            }
+
+        }
+        else if(request=="Create User")
+        {
+            QString flag;
+            inStream>>flag;
+            if(flag=="check")
+            {
+                 QString username;
+                inStream>>username;
+                bool ok=checkUsername(username);
+                outStream<<ok;
+
+            }
+            else if(flag=="update")
+            {
+                QString username,password;
+                QVariantMap map;
+                inStream>>username>>password>>map;
+                qInfo()<<username<<password;
+                bool ok=CreateUser(username,password,map);
+                outStream<<ok;
+
+            }
+
+        }
+        else if(request=="View Transaction History")
+        {
+            QString accountnumber;
+            quint16 count;
+            inStream>>accountnumber>>count;
+            QString data=ViewTransactionHistory(accountnumber,count);
+            outStream<<data;
+
 
         }
     }

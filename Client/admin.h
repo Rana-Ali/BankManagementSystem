@@ -34,6 +34,7 @@ private:
         QDataStream inStream;
         QString m_adminname;
 
+
 };
 
 #endif // ADMIN_H

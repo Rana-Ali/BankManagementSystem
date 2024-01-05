@@ -26,6 +26,8 @@ public:
     bool UpdateUser(QString ,QVariantMap);
     bool CreateUser(QString,QString,QVariantMap);
     bool checkUsername(QString);
+    bool DeleteUser(QString);
+    QString ViewBankDataBase();
 
 
     QString role() const;

@@ -654,6 +654,127 @@ bool DataBase::checkUsername(QString username)
     return true;  // Username is not found in the database
 }
 
+bool DataBase::DeleteUser(QString accountnumber)
+{
+    //check if account number exist
+    bool ok=checkAccNo(accountnumber);
+    if(!ok)
+    {
+        return ok;
+    }
+    // if account number exist , then get the username to be able to delete user from login DB
+    QString username;
+    ok=GetField(accountnumber,"Username",username);
+    if(!ok)
+    {
+        qDebug()<<"couldn't get the username";
+    }
+    // username is now here so we will delete the user first from login DB
+    if (!Login_DB.open(QIODevice::ReadWrite| QIODevice::Text)) {
+        qDebug() << "Error: Can't open the Login_DB file";
+        return false;
+    }
+    QByteArray loginData = Login_DB.readAll();
+    QJsonDocument loginDoc = QJsonDocument::fromJson(loginData);
+
+    // Check if the document is an object
+    if (loginDoc.isObject()) {
+        // Get the existing users array
+        QJsonObject m_login = loginDoc.object();
+        QJsonArray usersArray = m_login["users"].toArray();
+        for(int i=0;i<usersArray.size();++i)
+        {
+            if (!usersArray[i].isObject()) {
+                qDebug() << "Error: User entry is not an object";
+                Login_DB.close();
+                return false;
+            }
+
+            QJsonObject userObject = usersArray[i].toObject();
+            if(userObject.contains(username))
+            {
+                usersArray.removeAt(i);
+                // Update the JSON document with the modified users array
+                m_login["users"]=usersArray;
+                // Write the updated m_login to Login_DB
+                break;
+            }
+
+        }
+        Login_DB.seek(0);
+        Login_DB.resize(0);
+        Login_DB.write(QJsonDocument(m_login).toJson(QJsonDocument::Indented));
+        Login_DB.close();
+    }
+    else
+    {
+        qDebug()<<"loginDoc is not object";
+        Login_DB.close();
+        return false;
+    }
+    // then delete the user from Users DB
+    if (!Users_DB.open(QIODevice::ReadWrite | QIODevice::Text )) {
+        qDebug() << "Error: Can't open the DataBase file";
+        return false;
+    }
+    // Read JSON data
+    QByteArray jsonData = Users_DB.readAll();
+
+    // Parse JSON
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
+    if (jsonDoc.isNull()) {
+        qDebug() << "Error: Failed to parse JSON data from update";
+        Users_DB.close();
+        return false;
+    }
+    // Check if the root element is an object
+    if (!jsonDoc.isObject()) {
+        qDebug() << "Error: JSON data is not an object";
+        Users_DB.close();
+        return false;
+    }
+    QJsonObject m_Users = jsonDoc.object();
+    m_Users.remove(accountnumber);
+    Users_DB.seek(0);
+    Users_DB.resize(0); // Truncate the file
+    Users_DB.write(QJsonDocument(m_Users).toJson(QJsonDocument::Indented));
+    Users_DB.close();
+    return true;
+
+}
+
+QString DataBase::ViewBankDataBase()
+{
+    if (!Users_DB.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Error: Can't open the bank database file";
+        return QString();  // Return an empty string on error
+    }
+
+    QByteArray jsonData = Users_DB.readAll();
+    Users_DB.close();
+
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData);
+
+    if (jsonDoc.isNull() || !jsonDoc.isObject()) {
+        qDebug() << "Error: Invalid JSON data in the bank database file";
+        return QString();  // Return an empty string on error
+    }
+
+    QJsonObject bankObject = jsonDoc.object();
+
+    // Assuming users are stored as objects with usernames as keys
+    QJsonArray bankArray;
+    for (const QString& accountnumber : bankObject.keys()) {
+        QJsonObject userObject = bankObject[accountnumber].toObject();
+        bankArray.append(userObject);
+    }
+
+    return QJsonDocument(bankArray).toJson(QJsonDocument::Indented);
+}
+
+
+
+
 QString DataBase::role() const
 {
     return m_role;

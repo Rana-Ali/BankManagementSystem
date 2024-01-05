@@ -54,7 +54,7 @@ void Admin::GetAccNo()
 void Admin::ViewBankDatabase()
 {
     socket.waitForReadyRead();
-    qInfo()<<m_serverrespond.toString();
+    qInfo().noquote()<<m_serverrespond.toString();
 }
 
 void Admin::CreateNewUser()
@@ -149,7 +149,7 @@ void Admin::Deleteuser()
     }
     else
     {
-        qInfo()<<"User is not deleted!!";
+        qInfo()<<"User is not deleted!!\nAccount number is not existed!!";
     }
 
 }
@@ -348,6 +348,7 @@ void Admin::Start(bool &islogged)
     case 6:
         m_request="Delete User";
         sendrequesttoserver();
+        Deleteuser();
         break;
     case 7:
         m_request="View Bank DataBase";

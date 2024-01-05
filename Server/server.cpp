@@ -220,7 +220,21 @@ void Server::Handlerequest(QString request,QString role)
             QString data=ViewTransactionHistory(accountnumber,count);
             outStream<<data;
 
+        }
+        else if(request=="Delete User")
+        {
+            QString accountnumber;
+            inStream>>accountnumber;
+            bool ok=DeleteUser(accountnumber);
+            outStream<<ok;
+
+        }
+        else if(request=="View Bank DataBase")
+        {
+            QString Database=ViewBankDataBase();
+            outStream<<Database;
 
         }
     }
+
 }

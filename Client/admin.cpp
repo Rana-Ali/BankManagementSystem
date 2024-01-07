@@ -1,3 +1,8 @@
+/**************Admin Class**********************************************/
+/**********Author: Rana Ali ******************************************/
+/********************Ver.: 01*****************************************/
+/****************Date:1/01/2024.*************************************/
+/*******************************************************************/
 #include "admin.h"
 #include <iostream>
 #include <QVariant>
@@ -10,11 +15,11 @@ Admin::Admin()
     inStream.setDevice(&socket);
     inStream.setVersion(QDataStream::Qt_6_6);
     m_role="admin";
-    connect(&socket,&QTcpSocket::connected,this,&Admin::connected);
-    connect(&socket,&QTcpSocket::disconnected,this,&Admin::disconnected);
-    connect(&socket,&QTcpSocket::stateChanged,this,&Admin::stateChanged);
-    connect(&socket,&QTcpSocket::readyRead,this,&Admin::readyRead);
-    connect(&socket,&QTcpSocket::errorOccurred,this,&Admin::error);
+    connect(&socket,&QTcpSocket::connected,this,&Admin::connected,Qt::DirectConnection);
+    connect(&socket,&QTcpSocket::disconnected,this,&Admin::disconnected,Qt::DirectConnection);
+    //connect(&socket,&QTcpSocket::stateChanged,this,&Admin::stateChanged);
+    connect(&socket,&QTcpSocket::readyRead,this,&Admin::readyRead,Qt::DirectConnection);
+    connect(&socket,&QTcpSocket::errorOccurred,this,&Admin::error,Qt::DirectConnection);
 }
 
 void Admin::ViewAccount()
@@ -118,7 +123,9 @@ void Admin::CreateNewUser()
     QString Password=QString::fromStdString(password);
     outStream<<m_requestflag;
     outStream<<flag;
-    outStream<<Username<<Password<<map;
+    outStream<<Username;
+    outStream<<Password;
+    outStream<<map;
     socket.waitForBytesWritten();
     socket.waitForReadyRead();
     m_requestflag="General";
@@ -238,7 +245,8 @@ void Admin::UpdateUser()
     while(Chosenflag);
     outStream<<m_requestflag;
     outStream<<flag;
-    outStream<<AccountNumber<<map;
+    outStream<<AccountNumber;
+    outStream<<map;
     socket.waitForBytesWritten();
     socket.waitForReadyRead();
     m_requestflag="General";
@@ -262,7 +270,8 @@ void Admin::ViewTransactionHistory()
     qInfo()<<"Please send the number of transactions:";
     quint16 count;
     std::cin>>count;
-    outStream<<AccountNumber<<count;
+    outStream<<AccountNumber;
+    outStream<<count;
     socket.waitForBytesWritten();
     socket.waitForReadyRead();
     qInfo().noquote()<<m_serverrespond.toString();
@@ -271,16 +280,19 @@ void Admin::ViewTransactionHistory()
 void Admin::sendrequesttoserver()
 {
     outStream<<m_requestflag;
-    outStream<<m_request<<m_role;
+    outStream<<m_request;
+    outStream<<m_role;
 }
 
 bool Admin::Login()
 {
+    clearScreen();
     qInfo()<<"WELCOME!!";
     qInfo()<<"Username: ";
     m_request="Login";
     outStream<<m_requestflag;
-    outStream<<m_request<<m_role;
+    outStream<<m_request;
+    outStream<<m_role;
     QString adminname,password;
     std::string name;
     std::cin>>name;
@@ -296,7 +308,8 @@ bool Admin::Login()
         count++;
         if(!adminname.isEmpty()&&!password.isEmpty())
         {
-            outStream<<adminname<<password;
+            outStream<<adminname;
+            outStream<<password;
             socket.waitForBytesWritten();
             socket.waitForReadyRead();
             ok=m_serverrespond.toBool();
@@ -382,6 +395,7 @@ void Admin::connectToHost(QString host, quint16 port)
     socket.connectToHost(host,port);
 }
 
+
 void Admin::disconnect()
 {
     socket.close();
@@ -390,9 +404,7 @@ void Admin::disconnect()
 
 void Admin::connected()
 {
-    QTextStream input(stdin, QIODevice::ReadOnly);
-    QString userInput = input.readLine().trimmed();
-    socket.write(userInput.toUtf8());
+qInfo()<<"connected to"<<socket.parent();
 }
 
 void Admin::disconnected()
@@ -405,11 +417,11 @@ void Admin::error(QAbstractSocket::SocketError socketerror)
  qInfo()<<"Error:"<<socketerror<<socket.errorString();
 }
 
-void Admin::stateChanged(QAbstractSocket::SocketState socketstate)
-{
-    QMetaEnum metaenum = QMetaEnum::fromType<QAbstractSocket::SocketState>();
-    QString str= metaenum.valueToKey(socketstate);
-}
+// void Admin::stateChanged(QAbstractSocket::SocketState socketstate)
+// {
+//     QMetaEnum metaenum = QMetaEnum::fromType<QAbstractSocket::SocketState>();
+//     QString str= metaenum.valueToKey(socketstate);
+// }
 
 void Admin::readyRead()
 {
@@ -430,7 +442,7 @@ void Admin::readyRead()
     }
     else if(m_request=="Create User"||(m_request=="Delete User")||(m_request=="Update User")||(m_request=="Login"))
     {
-        bool respond;
+        bool respond = false;
         inStream>>respond;
         m_serverrespond.setValue(respond);
 

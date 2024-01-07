@@ -18,7 +18,6 @@ int main(int argc, char *argv[])
     std::cin>>clientrole;
     role = QString::fromStdString(clientrole);
 
-
      if(role.toUpper()=="USER")
      {
         User user;
@@ -63,6 +62,8 @@ int main(int argc, char *argv[])
      }
 
      qInfo()<<"BYE...BYE";
+
      exit(0);
+
      return a.exec();
 }

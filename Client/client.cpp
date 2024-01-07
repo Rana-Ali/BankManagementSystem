@@ -1,3 +1,8 @@
+/**************Client Abstraction class**********************************************/
+/**********Author: Rana Ali ********************************************************/
+/********************Ver.: 01******************************************************/
+/****************Date:1/01/2024.**************************************************/
+/********************************************************************************/
 #include "client.h"
 #include <QTextStream>
 #include<QDataStream>
@@ -16,21 +21,4 @@ void Client::clearScreen()
 
 
 
-// void Client::Login(QString username,QString password)
-// {
-//     bool isvalid = false;
-//     // do
-//     // {
-//     //     qInfo()<<"Please Enter Your Role `user` or `admin` ";
-//     //     QTextStream qin(stdin);
-//     //     role = qin.readLine();
-//     //     qInfo()<<"username: ";
-//     //     username = qin.readLine();
-//     //     qInfo()<<"Password: ";
-//     //     password = qin.readLine();
-//     //     isvalid =true;
-//     // }
-//     // while(!isvalid);
-
-// }
 

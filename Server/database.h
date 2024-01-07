@@ -6,6 +6,7 @@
 #include <QJsonArray>
 #include <QObject>
 #include <QVariantMap>
+#include <QMutex>
 
 class DataBase : public QObject
 {
@@ -28,6 +29,7 @@ public:
     bool checkUsername(QString);
     bool DeleteUser(QString);
     QString ViewBankDataBase();
+    QString GenerateAccNo(QString&);
 
 
     QString role() const;
@@ -45,6 +47,7 @@ private:
     QString m_username;
     QString m_role;
     QJsonObject m_login;
+    QMutex mutex;
     //QJsonObject userObject;
 
 };

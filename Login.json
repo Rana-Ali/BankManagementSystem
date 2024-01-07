@@ -1,30 +1,38 @@
 {
-    "users": [
-      {
-        "Rana": {
-          "accountnumber": "4545",
-          "password": "123456"  
-        }
-      },
-      {
-        "Ghada": {
-          "accountnumber": "4646",
-          "password": "654321"
-        }
-      }
-  
-    ],
     "admins": [
-      {
-        "Rana123": {
-          "password": "012345"
-        },
-        "Ranun":{
-          "password":"456789" 
+        {
+            "Rana123": {
+                "password": "012345"
+            },
+            "Ranun": {
+                "password": "456789"
+            }
         }
-  
-      }
+    ],
+    "users": [
+        {
+            "Rana": {
+                "accountnumber": "4545",
+                "password": "123456"
+            }
+        },
+        {
+            "Ghada": {
+                "accountnumber": "4646",
+                "password": "654321"
+            }
+        },
+        {
+            "Amal": {
+                "accountnumber": "9998",
+                "password": "666666"
+            }
+        },
+        {
+            "Ezz": {
+                "accountnumber": "14023974582491651637",
+                "password": "Ezz123"
+            }
+        }
     ]
-  }
-  
-  
+}

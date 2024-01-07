@@ -1,3 +1,8 @@
+/**************User Class**********************************************/
+/**********Author: Rana Ali ******************************************/
+/********************Ver.: 01*****************************************/
+/****************Date:1/01/2024.*************************************/
+/*******************************************************************/
 #include "user.h"
 #include <iostream>
 #include<QDataStream>
@@ -10,13 +15,11 @@ User::User()
     inStream.setDevice(&socket);
     inStream.setVersion(QDataStream::Qt_6_6);
     m_role="user";
-    m_request="Login";
-    m_requestflag="General";
-    connect(&socket,&QTcpSocket::connected,this,&User::connected);
-    connect(&socket,&QTcpSocket::disconnected,this,&User::disconnected);
-    connect(&socket,&QTcpSocket::stateChanged,this,&User::stateChanged);
-    connect(&socket,&QTcpSocket::readyRead,this,&User::readyRead);
-    connect(&socket,&QTcpSocket::errorOccurred,this,&User::error);
+    connect(&socket,&QTcpSocket::connected,this,&User::connected,Qt::DirectConnection);
+    connect(&socket,&QTcpSocket::disconnected,this,&User::disconnected,Qt::DirectConnection);
+    //connect(&socket,&QTcpSocket::stateChanged,this,&User::stateChanged);
+    connect(&socket,&QTcpSocket::readyRead,this,&User::readyRead,Qt::DirectConnection);
+    connect(&socket,&QTcpSocket::errorOccurred,this,&User::error,Qt::DirectConnection);
 }
 
 
@@ -31,7 +34,8 @@ void User::TransferAccount()
     //convert the data from stdString to QString to send it to the server and process it.
     QString ToAccountNumber=QString::fromStdString(toaccountnumber);
     //send the data to the server to handle that
-    outStream<<ToAccountNumber<<transferamount;
+    outStream<<ToAccountNumber;
+    outStream<<transferamount;
     socket.waitForBytesWritten();
     //wait for the respond from the server to view it to the client
     socket.waitForReadyRead();
@@ -98,16 +102,19 @@ void User::ViewTransactionHistory()
 void User::sendrequesttoserver()
 {
     outStream<<m_requestflag;
-    outStream<<m_request<<m_role;
+    outStream<<m_request;
+    outStream<<m_role;
 }
 
 bool User::Login()
 {
+    clearScreen();
     qInfo()<<"WELCOME!!";
     qInfo()<<"Username: ";
     m_request="Login";
     outStream<<m_requestflag;
-    outStream<<m_request<<m_role;
+    outStream<<m_request;
+    outStream<<m_role;
     QString password;
     std::string name;
     std::cin>>name;
@@ -123,7 +130,8 @@ bool User::Login()
         count++;
         if(!m_userName.isEmpty()&&!password.isEmpty())
         {
-            outStream<<m_userName<<password;
+            outStream<<m_userName;
+            outStream<<password;
             socket.waitForBytesWritten();
             socket.waitForReadyRead();
             ok=m_serverrespond.toBool();
@@ -213,9 +221,7 @@ void User::disconnect()
 
 void User::connected()
 {
-    QTextStream input(stdin, QIODevice::ReadOnly);
-    QString userInput = input.readLine().trimmed();
-    socket.write(userInput.toUtf8());
+qInfo()<<"connected to"<<socket.parent();
 }
 
 void User::disconnected()
@@ -229,11 +235,11 @@ void User::error(QAbstractSocket::SocketError socketerror)
     qInfo()<<"Error:"<<socketerror<<socket.errorString();
 }
 
-void User::stateChanged(QAbstractSocket::SocketState socketstate)
-{
-    QMetaEnum metaenum = QMetaEnum::fromType<QAbstractSocket::SocketState>();
-    QString str= metaenum.valueToKey(socketstate);
-}
+// void User::stateChanged(QAbstractSocket::SocketState socketstate)
+// {
+//     QMetaEnum metaenum = QMetaEnum::fromType<QAbstractSocket::SocketState>();
+//     QString str= metaenum.valueToKey(socketstate);
+// }
 
 void User::readyRead()
 {

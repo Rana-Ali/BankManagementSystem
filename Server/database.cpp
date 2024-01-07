@@ -1,3 +1,9 @@
+/***********Dtabase Class**********************************************/
+/**********Author: Rana Ali ******************************************/
+/********************Ver.: 01*****************************************/
+/****************Date:3/01/2024.*************************************/
+/*******************************************************************/
+
 #include "database.h"
 #include <QDateTime>
 
@@ -8,6 +14,16 @@ DataBase::DataBase(QObject *parent)
    Login_DB.setFileName("D:/qt projects/Login.json");
 }
 
+/******************************************************************/
+/* Func Name:  checkLogin                                         */
+/* **********************************************************     */
+/* Input Par  : QString username,QString password                 */
+/* Description: the username and password for each client         */
+/* Return Val : bool                                              */
+/* Description: check if username and password are in login DB    */
+/* Description: used to check credentials                         */
+/*                                                                */
+/* ****************************************************************/
 bool DataBase::checkLogin(QString username, QString password)
 {
     // Load JSON file
@@ -99,6 +115,16 @@ bool DataBase::checkLogin(QString username, QString password)
     return false;  // Authentication failed
 
 }
+/******************************************************************/
+/* Func Name:  ViewAccountBalance                                 */
+/* **********************************************************     */
+/* Input Par  : QString accountNumber                             */
+/* Description: the accountnumber of the user                     */
+/* Return Val : qint32                                            */
+/* Description: get the balance field from usersDB file           */
+/* Description: return the money to the user                      */
+/*                                                                */
+/* ****************************************************************/
 
 qint32 DataBase::ViewAccountBalance(QString accountNumber)
 {
@@ -107,12 +133,22 @@ qint32 DataBase::ViewAccountBalance(QString accountNumber)
     ok=GetField(accountNumber,"Balance",AccountBalance);
     if (ok)
     {
-        return AccountBalance.toInt();
+        return AccountBalance.toUInt();
     }
     else
         return -1;
 
 }
+/******************************************************************/
+/* Func Name:  GetAccNo                                           */
+/* **********************************************************     */
+/* Input Par  : QString username                                  */
+/* Description: the username of the user                          */
+/* Return Val : QString                                           */
+/* Description: get the account number from the username          */
+/*                                                                */
+/*                                                                */
+/* ****************************************************************/
 
 QString DataBase::GetAccNo(QString username)
 {
@@ -130,7 +166,17 @@ QString DataBase::GetAccNo(QString username)
 
         return error;
 }
-
+/****************************************************************************************/
+/* Func Name:  TransferAmount                                                           */
+/* **********************************************************                           */
+/* Input Par  : QString toAccNo ,quint32 transferAmount                                 */
+/* Description: the accountnumber of the user to which the amount will be transfered    */
+/* Description: the amount of money to be transfered                                    */
+/* Return Val : bool                                                                    */
+/* Description: if the transaction failed or succeed                                    */
+/*                                                                                       */
+/*                                                                                       */
+/* ************************************************************************************* */
 bool DataBase::TransferAmount( QString toAccNo, quint32 transferAmount)
 {
     QString mybalance,tobalance;
@@ -166,7 +212,18 @@ bool DataBase::TransferAmount( QString toAccNo, quint32 transferAmount)
     }
     return false;
 }
-
+/*********************************************************************/
+/* Func Name:  GetField                                              */
+/* **********************************************************        */
+/* Input Par  : QString accountnumber                                 */
+/* Description: the account number of the user                         */
+/* Input Par  : QString field                                         */
+/* Description: the field name                                        */
+/* Input Par  : QString& fieldValue                                   */
+/* Description: the variable to save the value in                     */
+/* Return Val : bool                                                  */
+/* Description: the field is existed and got successfully or not      */
+/* ********************************************************************/
 bool DataBase::GetField(QString accountnumber, QString field, QString& fieldValue)
 {
     // Load JSON file
@@ -204,9 +261,22 @@ bool DataBase::GetField(QString accountnumber, QString field, QString& fieldValu
     return false;
 
 }
+/*********************************************************************/
+/* Func Name:  update field                                          */
+/* **********************************************************        */
+/* Input Par  : QString accountnumber                                 */
+/* Description: the account number of the user                         */
+/* Input Par  : QString field                                         */
+/* Description: the field name                                        */
+/* Input Par  : QString fieldValue                                   */
+/* Description: the new value of the field                           */
+/* Return Val : bool                                                  */
+/* Description: the field is updated successfully or not              */
+/* ********************************************************************/
 
 bool DataBase::UpdateField(QString accountnumber, QString field, QString fieldValue)
 {
+    QMutexLocker locker(&mutex);
 
     //update fields  username or account number
     // Load JSON file
@@ -301,6 +371,14 @@ bool DataBase::UpdateField(QString accountnumber, QString field, QString fieldVa
        Users_DB.close();
         return false;
 }
+/*********************************************************************/
+/* Func Name:  MakeTransaction                                             */
+/* **********************************************************        */
+/* Input Par  : qint32 TransactionAmount                                */
+/* Description: the transaction amount                                */
+/* Return Val : bool                                                  */
+/* Description: the transaction is done successfully or not           */
+/* ********************************************************************/
 
 bool DataBase::MakeTransaction( qint32 TransactionAmount)
 {
@@ -330,9 +408,22 @@ bool DataBase::MakeTransaction( qint32 TransactionAmount)
     ok=UpdateField(m_accountnumber,"Balance",Balance);
     return ok;
 }
+/****************************************************************************************/
+/* Func Name:  SaveTransaction                                                          */
+/* **********************************************************                           */
+/* Input Par  : QString accountnumber                                                   */
+/* Description: the accountnumber of the user in which the transaction will be saved    */
+/* Input Par  : QString &TransactionDetails                                             */
+/* Description: the details of the transaction to be saved (date and type)              */
+/* Return Val : void                                                                    */
+/* Description: N/A                                                                      */
+/*                                                                                       */
+/*                                                                                       */
+/* ************************************************************************************* */
 
 void DataBase::SaveTransaction( QString accountnumber,QString &TransactionDetails)
 {
+    QMutexLocker locker(&mutex);
     if (!Users_DB.open(QIODevice::ReadWrite | QIODevice::Text)) {
         qDebug() << "Error: Can't open the DataBase file";
     }
@@ -378,7 +469,16 @@ void DataBase::SaveTransaction( QString accountnumber,QString &TransactionDetail
 }
     Users_DB.close();
 }
-
+/****************************************************************************************/
+/* Func Name:  ViewTransactionHistory                                                         */
+/* **********************************************************                           */
+/* Input Par  : QString accountnumber                                                   */
+/* Description: the accountnumber of the user in which the transaction will be viewed   */
+/* Input Par  : quint16 count                                                          */
+/* Description: the number of transactions to be viewed                                 */
+/* Return Val : QString                                                                   */
+/* Description: Transaction History of the account number                                */
+/* ************************************************************************************* */
 QString DataBase::ViewTransactionHistory(QString accountnumber,quint16 count)
 {
     QString error="This account doesn't have a Transaction Hisstory";
@@ -428,7 +528,14 @@ QString DataBase::ViewTransactionHistory(QString accountnumber,quint16 count)
 }
     return error;
 }
-
+/****************************************************************************************/
+/* Func Name:  Check Acc No                                                        */
+/* **********************************************************                           */
+/* Input Par  : QString accountnumber                                                   */
+/* Description: the accountnumber of the user to check if its exist in DB or not       */
+/* Return Val : bool                                                                  */
+/* Description: if the account number exist or not                                    */
+/* ************************************************************************************* */
 bool DataBase::checkAccNo(QString accountnumber)
 {
     // Load JSON file
@@ -462,6 +569,16 @@ bool DataBase::checkAccNo(QString accountnumber)
 
     return false;
 }
+/****************************************************************************************/
+/* Func Name:  Check field                                                       */
+/* **********************************************************                           */
+/* Input Par  : QString accountnumber                                                   */
+/* Description: the accountnumber of the user for which we search for a field in DB     */
+/* Input Par  : QString field                                                           */
+/* Description: the field to search about if its existed or not                         */
+/* Return Val : bool                                                                     */
+/* Description: if field exists or not in DB                                             */
+/* ************************************************************************************* */
 
 bool DataBase::checkField(QString accountnumber, QString field)
 {
@@ -480,7 +597,16 @@ bool DataBase::checkField(QString accountnumber, QString field)
     return false;
 
 }
-
+/****************************************************************************************/
+/* Func Name:  Update user                                                       */
+/* **********************************************************                           */
+/* Input Par  : QString accountnumber                                                   */
+/* Description: the accountnumber of the user in which we will update the fields in DB   */
+/* Input Par  :  QVariantMap map                                                        */
+/* Description: the fieldS to be changed and their new values                           */
+/* Return Val : bool                                                                     */
+/* Description: if user updated or not                                                    */
+/* ************************************************************************************* */
 bool DataBase::UpdateUser(QString accountnumber, QVariantMap map)
 {
     // bool ok=checkAccNo(accountnumber);
@@ -521,14 +647,21 @@ bool DataBase::UpdateUser(QString accountnumber, QVariantMap map)
     }
     return ok;
 }
-
+/****************************************************************************************/
+/* Func Name:  Create user                                                             */
+/* **********************************************************                           */
+/* Input Par  : QString username                                                        */
+/* Description: the username of the new user                                            */
+/* Input Par  : QString password                                                        */
+/* Description: the password of the new user                                            */
+/* Input Par  :  QVariantMap map                                                        */
+/* Description: the fieldS to be ecreated and their  valuesn                             */
+/* Return Val : bool                                                                     */
+/* Description: if user created or not                                                    */
+/* ************************************************************************************* */
 bool DataBase::CreateUser(QString username,QString password,QVariantMap map)
 {
-    // bool ok=checkUsername(username);
-    // if(!ok)
-    // {
-    //     return false;
-    // }
+    QMutexLocker locker(&mutex);
 
     //create user object in Users_DB file
     /***************************************************************************/
@@ -552,7 +685,7 @@ bool DataBase::CreateUser(QString username,QString password,QVariantMap map)
     }
     QJsonObject usersObject  = jsonDoc.object();
 
-    QString accountnumber ="9998";
+    QString accountnumber =GenerateAccNo(username);
     QJsonObject userObject;
     userObject["Accountnumber"]=accountnumber;
     foreach (QString key, map.keys()) {
@@ -610,7 +743,14 @@ bool DataBase::CreateUser(QString username,QString password,QVariantMap map)
     return true;
 
 }
-
+/****************************************************************************************/
+/* Func Name:  Check Username                                                        */
+/* **********************************************************                           */
+/* Input Par  : QString username                                                   */
+/* Description: the username of the user to check if its exist in DB or not       */
+/* Return Val : bool                                                                  */
+/* Description: if the username exist or not                                    */
+/* ************************************************************************************* */
 bool DataBase::checkUsername(QString username)
 {
     if (!Login_DB.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -653,9 +793,17 @@ bool DataBase::checkUsername(QString username)
     qInfo() << "Username is available";
     return true;  // Username is not found in the database
 }
-
+/****************************************************************************************/
+/* Func Name:  Delete user                                                             */
+/* **********************************************************                           */
+/* Input Par  : QString accountnumber                                                   */
+/* Description: the accountnumber of the user to be deleted from DB       */
+/* Return Val : bool                                                                  */
+/* Description: if the user deleted or not                                    */
+/* ************************************************************************************* */
 bool DataBase::DeleteUser(QString accountnumber)
 {
+    QMutexLocker locker(&mutex);
     //check if account number exist
     bool ok=checkAccNo(accountnumber);
     if(!ok)
@@ -742,7 +890,14 @@ bool DataBase::DeleteUser(QString accountnumber)
     return true;
 
 }
-
+/****************************************************************************************/
+/* Func Name:  ViewBankDataBase                                                       */
+/* **********************************************************                           */
+/* Input Par  : N/A                                                  */
+/* Description: N/A                                                                     */
+/* Return Val : QStirng                                                                 */
+/* Description: the users database                                                       */
+/* ************************************************************************************* */
 QString DataBase::ViewBankDataBase()
 {
     if (!Users_DB.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -771,9 +926,20 @@ QString DataBase::ViewBankDataBase()
 
     return QJsonDocument(bankArray).toJson(QJsonDocument::Indented);
 }
+/****************************************************************************************/
+/* Func Name:  GenerateAccNo                                                     */
+/* **********************************************************                           */
+/* Input Par  :  QString& username                                                 */
+/* Description: unique username to generate unique account number                       */
+/* Return Val : QStirng                                                                 */
+/* Description: the new user accountnumber                                                      */
+/* ************************************************************************************* */
+QString DataBase::GenerateAccNo(QString& username)
+{
+    qulonglong accno =qHash(username);
+    return QString::number(accno);
 
-
-
+}
 
 QString DataBase::role() const
 {

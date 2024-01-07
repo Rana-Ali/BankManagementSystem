@@ -1,0 +1,53 @@
+@startuml
+
+actor User
+actor Admin
+participant MyServer
+participant MyRunnable
+participant ClientCommunication
+participant DataBase
+
+User -> MyServer: StartServer()
+activate MyServer
+MyServer -> MyServer: listen()
+note over MyServer: Server listening on port 1234
+
+User -> MyServer: User connects
+activate MyServer
+MyServer -> MyServer: incomingConnection(socketDescriptor)
+activate MyServer
+MyServer -> MyRunnable: Create MyRunnable(socketDescriptor)
+activate MyRunnable
+MyRunnable -> MyRunnable: run()
+MyRunnable -> MyRunnable: create ClientCommunication
+MyRunnable -> ClientCommunication: setSocketDescriptor(socketDescriptor)
+activate ClientCommunication
+
+User -> ClientCommunication: Send login request (User)
+ClientCommunication -> MyRunnable: Signal loginRequestReceived(username, password)
+MyRunnable -> MyRunnable: Process login request (User)
+MyRunnable -> MyRunnable: Loop until valid connection
+alt Valid user connection
+    MyRunnable -> MyRunnable: waitForReadyRead()
+    note over MyRunnable: Waiting for data from the client
+    User -> ClientCommunication: Send data
+    ClientCommunication -> MyRunnable: Signal dataReceived(data)
+    MyRunnable -> DataBase: Process user request
+    activate DataBase
+    DataBase --> MyRunnable: Result of user request
+    destroy DataBase
+    MyRunnable -> ClientCommunication: Send response
+    ClientCommunication -> User: Display response
+    MyRunnable -> MyRunnable: Continue loop (if needed)
+else Invalid user connection
+    MyRunnable -> ClientCommunication: Send invalid response
+    ClientCommunication -> User: Display invalid response
+    MyRunnable -> MyRunnable: Repeat login process
+end
+
+deactivate ClientCommunication
+deactivate MyRunnable
+deactivate MyServer
+
+
+@enduml
